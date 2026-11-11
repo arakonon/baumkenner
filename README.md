@@ -7,7 +7,7 @@ Mit Vorauswahl nach Vorkommen in Deutschland, Hinweisen, Infokarten und Untersch
 
 ## Inhalte
 
-- 350 Arten nach der Artenauswahl des Kosmos-Naturführers „Welcher Baum ist das?“ (Spohn & Spohn), davon 327 mit Bild im Quiz.
+- 350 Arten
 - Alle Beschreibungen, Unterscheidungstipps und Gattungsmerkmale sind eigene Formulierungen; aus dem Buch stammen nur Fakten wie Höhe, Blütezeit und Vorkommen.
 - Alle Bilder sind gemeinfrei (Public Domain) oder CC0 und stammen von Wikimedia Commons. Teilweise zugeschnitten und mit abgedeckten Namensschildern. Urheber*in, Lizenz und Link zur Quelle stehen in `daten.js` und werden in der App nach jeder Antwort angezeigt.
 
