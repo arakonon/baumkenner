@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2e6b3f">
+<title>Baumkenner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Schibsted+Grotesk:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: eine Spalte, mobil zuerst. Bild oben wie ein Herbarbogen, Antworten als große Tasten darunter. */
+:root{
+  --bg:#edf0e8; --surface:#fafbf6; --sunk:#e2e7db; --ink:#1b2418; --muted:#5a6655; --line:#d0d8c8;
+  --accent:#2e6b3f; --accent-ink:#ffffff; --accent-soft:#d6e7d4; --bark:#7a5230;
+  --ok:#2c7a3c; --ok-bg:#d9eed8; --bad:#b0442c; --bad-bg:#f6ddd5; --hint:#8a6a12; --hint-bg:#f6ecc8;
+  --display:"Young Serif", Georgia, "Times New Roman", serif;
+  --body:"Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#10150f; --surface:#182016; --sunk:#0c100b; --ink:#e3e9dc; --muted:#9aa693; --line:#2f3a2b;
+  --accent:#8cc48f; --accent-ink:#10200f; --accent-soft:#213a22; --bark:#d2a273;
+  --ok:#8fd394; --ok-bg:#1d3a1f; --bad:#f19a82; --bad-bg:#43231a; --hint:#e6c463; --hint-bg:#3a3014; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10150f; --surface:#182016; --sunk:#0c100b; --ink:#e3e9dc; --muted:#9aa693; --line:#2f3a2b;
+  --accent:#8cc48f; --accent-ink:#10200f; --accent-soft:#213a22; --bark:#d2a273;
+  --ok:#8fd394; --ok-bg:#1d3a1f; --bad:#f19a82; --bad-bg:#43231a; --hint:#e6c463; --hint-bg:#3a3014; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tap-highlight-color:transparent;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 32px;display:flex;flex-direction:column;gap:14px}
+
+/* Kopfzeile */
+.top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.top .in{max-width:640px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px}
+.brand{font-family:var(--display);font-size:1.3rem;letter-spacing:-.01em;margin-right:auto;background:none;border:0;padding:0;cursor:pointer}
+.brand small{font-family:var(--body);font-size:.72rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-left:6px}
+.pill{font-size:.85rem;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+body.inquiz .brand small{display:none}
+@media (max-width:380px){.brand small{display:none}}
+.pill b{color:var(--ink)}
+.navbtn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:.85rem;cursor:pointer}
+.prog{height:3px;background:var(--line)}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+
+/* Allgemein */
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:1.9rem;line-height:1.15}
+h2{font-size:1.3rem}
+.lead{color:var(--muted);margin:0;max-width:60ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.label{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 13px;font-size:.92rem;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chip .n{font-size:.75rem;opacity:.7;font-variant-numeric:tabular-nums}
+.btn{border:0;border-radius:8px;padding:14px 18px;font-weight:700;cursor:pointer;background:var(--accent);color:var(--accent-ink);font-size:1rem}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:600}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1 1 auto}
+.range{display:flex;align-items:center;gap:12px}
+.range input{flex:1;accent-color:var(--accent)}
+.range output{min-width:7.5em;font-size:.9rem;font-variant-numeric:tabular-nums}
+.sumline{font-size:.95rem}
+.sumline b{font-variant-numeric:tabular-nums}
+.toggle{display:flex;gap:10px;align-items:flex-start;font-size:.95rem;cursor:pointer}
+.toggle input{width:20px;height:20px;accent-color:var(--accent);margin-top:2px;flex:none}
+
+/* Quiz */
+.plate{position:relative;background:var(--sunk);border-radius:10px;overflow:hidden;display:grid;place-items:center;height:min(52vh,460px);cursor:zoom-in;border:1px solid var(--line)}
+.plate img{max-width:100%;max-height:min(52vh,460px);width:auto;height:auto;object-fit:contain;display:block;background:#fff}
+.plate .zoomhint{position:absolute;right:8px;bottom:8px;font-size:.72rem;background:rgba(0,0,0,.55);color:#fff;padding:3px 8px;border-radius:4px}
+.plate .loading{color:var(--muted);font-size:.9rem}
+.step{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.step h2 small{font-family:var(--body);font-size:.8rem;color:var(--bark);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-left:6px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:380px){.opts{grid-template-columns:1fr}}
+.opt{min-height:58px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:1px;line-height:1.25}
+.opt .sub{font-size:.8rem;color:var(--muted);font-style:italic}
+.opt:disabled{cursor:default}
+.opt.ok{background:var(--ok-bg);border-color:var(--ok)}
+.opt.bad{background:var(--bad-bg);border-color:var(--bad)}
+.opt.gone{opacity:.28;text-decoration:line-through}
+.hintbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hintbtn{border:1px dashed var(--hint);color:var(--hint);background:transparent;border-radius:999px;padding:7px 14px;cursor:pointer;font-size:.9rem;font-weight:600}
+.hintbtn:disabled{opacity:.4;cursor:default}
+.hints{display:flex;flex-direction:column;gap:6px}
+.hint{background:var(--hint-bg);border-radius:8px;padding:9px 12px;font-size:.92rem}
+.hint b{color:var(--hint)}
+.verdict{font-weight:700;font-size:1.05rem}
+.verdict.ok{color:var(--ok)} .verdict.bad{color:var(--bad)}
+
+/* Infokarte */
+.info .names h2{font-size:1.5rem}
+.info .lat{font-style:italic;color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;margin:0}
+.facts div{min-width:0}
+.facts dt{font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:0;font-size:.95rem}
+.facts .wide{grid-column:1/-1}
+.dots{letter-spacing:2px;color:var(--accent)}
+.dots i{font-style:normal;color:var(--line)}
+.status{display:inline-block;font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.status.M,.status.Z{background:var(--sunk);color:var(--muted)}
+.tips{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:4px}
+.mixup{background:var(--bad-bg);border-radius:8px;padding:10px 12px;font-size:.93rem}
+.credit{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
+.credit a{color:inherit}
+
+/* Ergebnis und Liste */
+.big{font-family:var(--display);font-size:3rem;line-height:1;font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stat{background:var(--sunk);border-radius:8px;padding:10px;text-align:center}
+.stat b{display:block;font-size:1.3rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.75rem;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.item{display:flex;gap:12px;align-items:center;background:var(--surface);padding:8px 12px;cursor:pointer;border:0;text-align:left;width:100%}
+.item img,.item .noimg{width:52px;height:52px;object-fit:cover;border-radius:6px;background:var(--sunk);flex:none}
+.item .noimg{display:grid;place-items:center;font-size:.6rem;color:var(--muted);text-align:center;line-height:1.1}
+.item .t{min-width:0;flex:1}
+.item .t b{display:block;font-weight:600}
+.item .t span{font-size:.82rem;color:var(--muted);font-style:italic}
+.item .badge{font-size:.7rem;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 7px;white-space:nowrap}
+.search{width:100%;font:inherit;padding:11px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.gallery{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.gallery img{height:150px;border-radius:6px;background:#fff;cursor:zoom-in;flex:none}
+.empty{color:var(--muted);text-align:center;padding:24px 8px}
+
+/* Vollbild */
+.zoom{position:fixed;inset:0;z-index:50;background:rgba(8,10,7,.95);display:grid;place-items:center;
+  padding:max(12px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));cursor:zoom-out}
+.zoom img{max-width:100%;max-height:100%;object-fit:contain;background:#fff}
+.zoom button{position:absolute;top:max(12px,env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));background:#fff;color:#111;border:0;border-radius:999px;padding:8px 14px;font-weight:700;cursor:pointer}
+footer{font-size:.78rem;color:var(--muted);text-align:center;max-width:60ch;margin:8px auto 0}
+footer a{color:inherit}
+@media (prefers-reduced-motion:no-preference){.plate img{animation:fade .25s ease}@keyframes fade{from{opacity:.25}to{opacity:1}}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="in">
+    <button class="brand" id="home" aria-label="Zur Startseite">Baumkenner<small>350 Arten</small></button>
+    <span class="pill" id="score" hidden></span>
+    <button class="navbtn" id="nav-list">Artenliste</button>
+  </div>
+  <div class="prog"><i id="progbar"></i></div>
+</header>
+
+<!-- Start -->
+<main class="wrap" id="v-start">
+  <div>
+    <h1>Welcher Baum ist das?</h1>
+    <p class="lead">Erst die Gattung erkennen, dann als Bonus die genaue Art. Wähle aus, welche Bäume und Sträucher drankommen sollen.</p>
+  </div>
+  <section class="card" aria-labelledby="l-vork">
+    <span class="label" id="l-vork">Vorkommen in Deutschland</span>
+    <div class="chips" id="f-st"></div>
+  </section>
+  <section class="card" aria-labelledby="l-gr">
+    <span class="label" id="l-gr">Gruppe</span>
+    <div class="chips" id="f-gr"></div>
+  </section>
+  <section class="card" aria-labelledby="l-hf">
+    <span class="label" id="l-hf">Wie häufig man sie sieht</span>
+    <div class="range"><input type="range" id="f-hf" min="1" max="5" step="1" value="1" aria-label="Mindesthäufigkeit"><output id="o-hf"></output></div>
+    <label class="toggle"><input type="checkbox" id="f-sort" checked> Häufige Arten zuerst abfragen</label>
+  </section>
+  <section class="card" aria-labelledby="l-n">
+    <span class="label" id="l-n">Anzahl Fragen</span>
+    <div class="chips" id="f-n"></div>
+    <p class="sumline" id="sum"></p>
+    <button class="btn" id="start">Quiz starten</button>
+  </section>
+  <footer>Artenauswahl nach dem Kosmos-Naturführer „Welcher Baum ist das?“. Texte eigene Zusammenfassung. Alle Bilder gemeinfrei (Public Domain oder CC0) von Wikimedia Commons, Quellenangabe nach jeder Antwort.</footer>
+</main>
+
+<!-- Quiz -->
+<main class="wrap" id="v-quiz" hidden>
+  <div class="plate" id="plate" role="button" tabindex="0" aria-label="Bild vergrößern"><span class="loading">Lade Bild …</span></div>
+  <div class="step"><h2 id="q-title"></h2><span class="pill" id="q-num"></span></div>
+  <div class="opts" id="opts"></div>
+  <div class="hintbar"><button class="hintbtn" id="hintbtn">Hinweis</button><span class="pill" id="hintleft"></span></div>
+  <div class="hints" id="hints"></div>
+  <section class="card info" id="info" hidden aria-live="polite"></section>
+  <div class="row" id="nextrow" hidden><button class="btn" id="next">Weiter</button></div>
+</main>
+
+<!-- Ergebnis -->
+<main class="wrap" id="v-end" hidden>
+  <section class="card">
+    <span class="label">Ergebnis</span>
+    <div class="big" id="e-score"></div>
+    <div class="stats" id="e-stats"></div>
+  </section>
+  <section class="card" id="e-wrong-card">
+    <span class="label">Noch üben</span>
+    <div class="list" id="e-wrong"></div>
+  </section>
+  <div class="row"><button class="btn" id="e-retry">Fehler wiederholen</button><button class="btn ghost" id="e-new">Neues Quiz</button></div>
+</main>
+
+<!-- Artenliste -->
+<main class="wrap" id="v-list" hidden>
+  <div><h1>Artenliste</h1><p class="lead" id="l-sum"></p></div>
+  <input class="search" id="l-q" type="search" placeholder="Name oder Gattung suchen" aria-label="Arten durchsuchen">
+  <div class="chips" id="l-gr"></div>
+  <div class="list" id="l-items"></div>
+</main>
+
+<!-- Artdetail -->
+<main class="wrap" id="v-detail" hidden>
+  <div class="row"><button class="btn ghost" id="d-back" style="flex:0 0 auto">Zurück zur Liste</button></div>
+  <section class="card info" id="d-card"></section>
+</main>
+
+<div class="zoom" id="zoom" hidden role="dialog" aria-modal="true" aria-label="Bild im Vollbild"><img id="zoom-img" alt=""><button id="zoom-close">Schließen</button></div>
+
+<script src="daten.js"></script>
+<script>
+(() => {
+const D = window.BAUMDATEN, ARTEN = D.arten, GATT = D.gattungen;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pick = a => a[Math.random() * a.length | 0];
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("baumkenner:" + k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("baumkenner:" + k, JSON.stringify(v)); } catch {} }
+};
+
+const ST = { H: "Heimisch", E: "Eingebürgert", P: "Häufig gepflanzt", Z: "Selten gepflanzt", M: "Mittelmeer / Kübel" };
+const ST_LONG = { H: "Heimisch, wächst wild", E: "Nicht heimisch, aber verwildert und eingebürgert", P: "Nicht heimisch, häufig gepflanzt", Z: "Nicht heimisch, nur vereinzelt in Parks und Gärten", M: "Bei uns kaum im Freien, Mittelmeer oder Kübelpflanze" };
+const GR = { N: "Nadelbäume", L: "Laubbäume", S: "Sträucher", K: "Kletterpflanzen" };
+const HF = ["", "sehr selten", "selten", "gelegentlich", "häufig", "sehr häufig"];
+const NS = [10, 20, 50, 0];
+
+const MIT_BILD = ARTEN.filter(a => a.bilder.length);
+const BY_G = {}; MIT_BILD.forEach(a => (BY_G[a.g] ??= []).push(a));
+
+/* ---------- Einstellungen ---------- */
+const S = Object.assign({ st: ["H", "E", "P"], gr: ["N", "L", "S", "K"], hf: 1, sort: true, n: 20 }, store.get("settings", {}));
+function pool() { return MIT_BILD.filter(a => S.st.includes(a.st) && S.gr.includes(a.gr) && a.hf >= S.hf); }
+function chipset(el, map, key, count) {
+  el.innerHTML = Object.entries(map).map(([k, v]) =>
+    `<button class="chip" id="${el.id}-${k}" data-k="${k}" aria-pressed="${S[key].includes(k)}">${esc(v)}<span class="n">${count(k)}</span></button>`).join("");
+  el.onclick = e => { const b = e.target.closest(".chip"); if (!b) return;
+    const k = b.dataset.k, on = S[key].includes(k);
+    S[key] = on ? S[key].filter(x => x !== k) : [...S[key], k]; renderStart(); };
+}
+function renderStart() {
+  chipset($("f-st"), ST, "st", k => MIT_BILD.filter(a => a.st === k).length);
+  chipset($("f-gr"), GR, "gr", k => MIT_BILD.filter(a => a.gr === k).length);
+  $("f-hf").value = S.hf; $("o-hf").textContent = S.hf === 1 ? "alle" : "ab „" + HF[S.hf] + "“";
+  $("f-sort").checked = S.sort;
+  $("f-n").innerHTML = NS.map(n => `<button class="chip" id="f-n-${n}" data-n="${n}" aria-pressed="${S.n === n}">${n || "Alle"}</button>`).join("");
+  const p = pool(), gs = new Set(p.map(a => a.g)).size, n = S.n ? Math.min(S.n, p.length) : p.length;
+  $("sum").innerHTML = p.length ? `<b>${p.length}</b> Arten aus <b>${gs}</b> Gattungen passen · <b>${n}</b> Fragen` : "Keine Art passt zu dieser Auswahl. Wähle mehr Vorkommen oder Gruppen aus.";
+  $("start").disabled = !p.length;
+  store.set("settings", S);
+}
+$("f-hf").oninput = e => { S.hf = +e.target.value; renderStart(); };
+$("f-sort").onchange = e => { S.sort = e.target.checked; renderStart(); };
+$("f-n").onclick = e => { const b = e.target.closest(".chip"); if (b) { S.n = +b.dataset.n; renderStart(); } };
+
+/* ---------- Ansichten ---------- */
+const VIEWS = ["start", "quiz", "end", "list", "detail"];
+function show(v) { VIEWS.forEach(x => $("v-" + x).hidden = x !== v); $("score").hidden = v !== "quiz"; document.body.classList.toggle("inquiz", v === "quiz"); scrollTo(0, 0); }
+$("home").onclick = () => { if (Q && !Q.done && !confirmLeave()) return; Q = null; setProg(0); renderStart(); show("start"); };
+$("nav-list").onclick = () => { renderList(); show("list"); };
+let leaveArmed = 0;
+function confirmLeave() { // zweiter Klick innerhalb von 3 s bestätigt
+  if (Date.now() - leaveArmed < 3000) return true;
+  leaveArmed = Date.now(); $("home").querySelector("small").textContent = "nochmal tippen zum Beenden";
+  setTimeout(() => $("home").querySelector("small").textContent = "350 Arten", 3000); return false;
+}
+
+/* ---------- Quiz ---------- */
+let Q = null;
+const seen = store.get("seen", {});   // Bildrotation: wie oft welches Bild gezeigt wurde
+function setProg(x) { $("progbar").style.width = (x * 100) + "%"; }
+
+function startQuiz(list) {
+  let order;
+  if (list) order = shuffle(list.slice());
+  else {
+    const p = pool();
+    order = S.sort ? p.map(a => [a, a.hf + Math.random() * 2.5]).sort((x, y) => y[1] - x[1]).map(x => x[0]) : shuffle(p.slice());
+    if (S.n) order = order.slice(0, S.n);
+    order = shuffle(order);
+  }
+  Q = { queue: order, total: order.length, i: 0, pts: 0, max: 0, gOk: 0, aOk: 0, aAsk: 0, wrong: [], requeued: new Set(), done: false };
+  show("quiz"); nextQ();
+}
+$("start").onclick = () => startQuiz();
+
+function chooseImage(a) {
+  const n = b => seen[b.f] || 0, min = Math.min(...a.bilder.map(n));
+  const b = pick(a.bilder.filter(x => n(x) === min));
+  seen[b.f] = n(b) + 1; store.set("seen", seen); return b;
+}
+function genusOpts(a) {
+  const same = [...new Set(MIT_BILD.filter(x => x.gr === a.gr && x.g !== a.g).map(x => x.g))];
+  const sameForm = [...new Set(MIT_BILD.filter(x => x.gr === a.gr && x.form === a.form && x.g !== a.g).map(x => x.g))];
+  const out = shuffle(sameForm).slice(0, 2);
+  for (const g of shuffle(same)) { if (out.length >= 3) break; if (!out.includes(g)) out.push(g); }
+  if (out.length < 3) for (const g of shuffle(Object.keys(BY_G))) { if (out.length >= 3) break; if (g !== a.g && !out.includes(g)) out.push(g); }
+  return shuffle([a.g, ...out]).map(g => ({ id: g, main: GATT[g].de, sub: g }));
+}
+function speciesOpts(a) {
+  let sib = BY_G[a.g].filter(x => x !== a);
+  sib = shuffle(sib).slice(0, 5);
+  return shuffle([a, ...sib]).map(x => ({ id: x.nr, main: x.de, sub: x.lat }));
+}
+
+function nextQ() {
+  if (Q.i >= Q.queue.length) return endQuiz();
+  const a = Q.queue[Q.i];
+  Q.cur = { a, img: chooseImage(a), step: 1, hints: 0, gRight: null };
+  $("info").hidden = true; $("nextrow").hidden = true; $("hints").innerHTML = "";
+  $("q-num").textContent = `Frage ${Q.i + 1} von ${Q.queue.length}`;
+  setProg(Q.i / Q.queue.length); updScore();
+  const im = new Image(); im.alt = "Gesuchte Art"; im.src = "img/" + Q.cur.img.f + ".webp";
+  im.width = Q.cur.img.w; im.height = Q.cur.img.h;
+  $("plate").replaceChildren(im); const z = document.createElement("span"); z.className = "zoomhint"; z.textContent = "Tippen zum Vergrößern"; $("plate").append(z);
+  // nächstes Bild vorladen
+  const nx = Q.queue[Q.i + 1]; if (nx) { const p = new Image(); p.src = "img/" + nx.bilder[0].f + ".webp"; }
+  askGenus();
+}
+function renderOpts(opts, onPick) {
+  $("opts").innerHTML = opts.map((o, i) => `<button class="opt" id="opt-${i}" data-i="${i}"><span>${esc(o.main)}</span><span class="sub">${esc(o.sub)}</span></button>`).join("");
+  $("opts").onclick = e => { const b = e.target.closest(".opt"); if (b && !b.disabled) onPick(opts[+b.dataset.i], b, opts); };
+  Q.cur.opts = opts; Q.cur.hints = 0; $("hints").innerHTML = ""; updHintBtn();
+}
+function askGenus() {
+  $("q-title").innerHTML = "Welche Gattung?";
+  renderOpts(genusOpts(Q.cur.a), pickGenus);
+}
+function pickGenus(o, btn) {
+  const a = Q.cur.a, right = o.id === a.g;
+  lockOpts(a.g, btn, right);
+  const p = right ? Math.max(0.25, 1 - 0.25 * Q.cur.hints) : 0;
+  Q.pts += p; Q.max += 1; if (right) Q.gOk++;
+  Q.cur.gRight = right; Q.cur.gPick = o.id;
+  const sibs = BY_G[a.g].length;
+  if (right && sibs > 1) {
+    verdict(true, `Richtig, eine Art der Gattung ${GATT[a.g].de}.`);
+    setTimeout(askSpecies, 650);
+  } else {
+    if (!right) miss(a);
+    else { Q.aOk++; Q.aAsk++; }
+    finish(right, right ? `Richtig! Die Gattung hat hier nur diese eine Art.` : `Nicht ganz, gesucht war ${GATT[a.g].de} (${a.g}).`);
+  }
+}
+function askSpecies() {
+  Q.cur.step = 2;
+  $("q-title").innerHTML = 'Welche Art genau? <small>Bonus</small>';
+  renderOpts(speciesOpts(Q.cur.a), pickSpecies);
+}
+function pickSpecies(o, btn) {
+  const a = Q.cur.a, right = o.id === a.nr;
+  lockOpts(a.nr, btn, right);
+  const p = right ? Math.max(0.25, 1 - 0.25 * Q.cur.hints) : 0;
+  Q.pts += p; Q.max += 1; Q.aAsk++; if (right) Q.aOk++; else { miss(a); Q.cur.mix = ARTEN.find(x => x.nr === o.id); }
+  finish(right, right ? "Richtig, auch die Art stimmt!" : `Gattung richtig, aber die Art war ${a.de}.`);
+}
+function lockOpts(rightId, btn, right) {
+  [...$("opts").children].forEach((b, i) => { b.disabled = true; if (Q.cur.opts[i].id === rightId) b.classList.add("ok"); });
+  if (!right) btn.classList.add("bad");
+  $("hintbtn").disabled = true;
+}
+function miss(a) {
+  if (!Q.wrong.includes(a)) Q.wrong.push(a);
+  if (!Q.requeued.has(a.nr)) { // falsche Arten kommen einmal später wieder
+    Q.requeued.add(a.nr);
+    const at = Math.min(Q.queue.length, Q.i + 4 + (Math.random() * 3 | 0));
+    Q.queue.splice(at, 0, a);
+  }
+}
+function verdict(ok, text) {
+  $("hints").insertAdjacentHTML("afterbegin", `<div class="verdict ${ok ? "ok" : "bad"}">${esc(text)}</div>`);
+}
+function finish(ok, text) {
+  $("hints").innerHTML = ""; verdict(ok, text);
+  const a = Q.cur.a;
+  if (!Q.cur.gRight && Q.cur.gPick) {
+    const wrongG = GATT[Q.cur.gPick];
+    Q.cur.mixG = wrongG;
+  }
+  $("info").innerHTML = infoCard(a, Q.cur.img, Q.cur);
+  $("info").hidden = false; $("nextrow").hidden = false; updScore();
+  $("next").focus({ preventScroll: true });
+  setTimeout(() => $("info").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }), 120);
+}
+$("next").onclick = () => { Q.i++; nextQ(); };
+function updScore() {
+  if (!Q) return;
+  $("score").innerHTML = `<b>${fmt(Q.pts)}</b> Punkte`;
+}
+const fmt = x => (Math.round(x * 100) / 100).toLocaleString("de-DE");
+
+/* ---------- Hinweise ---------- */
+function hintsFor() {
+  const a = Q.cur.a, g = GATT[a.g];
+  if (Q.cur.step === 1) return [
+    { t: "Wuchs", v: `${a.wuchs}${a.h ? ", " + a.h + " hoch" : ""}.` },
+    { t: "Typisch für die Gattung", v: g.tipps.length ? g.tipps[0] : a.tipps[0] },
+    { t: "Auswahl eingegrenzt", cut: true }
+  ];
+  return [
+    { t: "Standort", v: a.ort },
+    { t: "Vorkommen", v: `${ST_LONG[a.st]}, ${HF[a.hf]} zu sehen.` },
+    { t: "Erkennungsmerkmal", v: a.tipps[0] }
+  ];
+}
+function updHintBtn() {
+  const left = 3 - Q.cur.hints;
+  $("hintbtn").disabled = left <= 0;
+  $("hintleft").textContent = left < 3 ? `noch ${left} · jeder Hinweis kostet ¼ Punkt` : "";
+}
+$("hintbtn").onclick = () => {
+  const h = hintsFor()[Q.cur.hints]; if (!h) return;
+  Q.cur.hints++;
+  if (h.cut) {
+    const btns = [...$("opts").children].filter((b, i) => !b.disabled && Q.cur.opts[i].id !== (Q.cur.step === 1 ? Q.cur.a.g : Q.cur.a.nr));
+    shuffle(btns).slice(0, Math.max(1, Math.ceil(btns.length / 2))).forEach(b => { b.disabled = true; b.classList.add("gone"); });
+    $("hints").insertAdjacentHTML("beforeend", `<div class="hint"><b>${h.t}:</b> Falsche Antworten ausgeblendet.</div>`);
+  } else $("hints").insertAdjacentHTML("beforeend", `<div class="hint"><b>${esc(h.t)}:</b> ${esc(h.v)}</div>`);
+  updHintBtn();
+};
+
+/* ---------- Infokarte ---------- */
+function dots(n) { return `<span class="dots" aria-label="${HF[n]}">${"●".repeat(n)}<i>${"●".repeat(5 - n)}</i></span>`; }
+function infoCard(a, img, cur) {
+  const g = GATT[a.g], sibs = ARTEN.filter(x => x.g === a.g && x !== a);
+  let mix = "";
+  if (cur && cur.mix) mix = `<div class="mixup"><b>Verwechselt mit ${esc(cur.mix.de)}:</b> ${esc(cur.mix.tipps[0])}</div>`;
+  else if (cur && cur.mixG) mix = `<div class="mixup">Du hast <b>${esc(cur.mixG.de)}</b> gewählt. Woran man ${esc(g.de)} erkennt: ${esc(g.tipps[0] || a.tipps[0])}</div>`;
+  const credit = img ? `<p class="credit">Bild: ${esc(img.by || "unbekannt")} · ${esc(img.lic)} · <a href="${esc(img.src)}" target="_blank" rel="noopener">Quelle auf Wikimedia Commons</a></p>` : "";
+  return `
+    <div class="names"><span class="label">${esc(GR[a.gr])} · Gattung ${esc(g.de)}</span><h2>${esc(a.de)}</h2><span class="lat">${esc(a.lat)} · ${esc(a.fam)}</span></div>
+    ${mix}
+    <dl class="facts">
+      <div><dt>Höhe</dt><dd>${esc(a.h || "–")}</dd></div>
+      <div><dt>Blütezeit</dt><dd>${esc(a.bl || "–")}</dd></div>
+      <div class="wide"><dt>Wuchs</dt><dd>${esc(a.wuchs)}</dd></div>
+      <div class="wide"><dt>Standort</dt><dd>${esc(a.ort)}</dd></div>
+      <div class="wide"><dt>In Deutschland</dt><dd><span class="status ${a.st}">${esc(ST[a.st])}</span> ${dots(a.hf)} <span class="pill">${HF[a.hf]}</span></dd></div>
+    </dl>
+    <div><span class="label">${sibs.length ? "So unterscheidest du sie" : "Daran erkennst du sie"}</span>
+      <ul class="tips">${a.tipps.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>
+    ${g.tipps.length && sibs.length ? `<div><span class="label">Typisch für ${esc(g.de)}</span><ul class="tips">${g.tipps.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>` : ""}
+    ${sibs.length ? `<p class="credit">Weitere Arten der Gattung im Buch: ${sibs.map(s => esc(s.de)).join(", ")}</p>` : ""}
+    ${credit}`;
+}
+
+/* ---------- Ende ---------- */
+function endQuiz() {
+  Q.done = true; setProg(1);
+  const pct = Q.max ? Math.round(100 * Q.pts / Q.max) : 0;
+  $("e-score").textContent = `${fmt(Q.pts)} / ${Q.max}`;
+  $("e-stats").innerHTML = `
+    <div class="stat"><b>${pct} %</b><span>der Punkte</span></div>
+    <div class="stat"><b>${Q.gOk}</b><span>Gattungen richtig</span></div>
+    <div class="stat"><b>${Q.aOk}/${Q.aAsk}</b><span>Arten richtig</span></div>`;
+  $("e-wrong-card").hidden = !Q.wrong.length; $("e-retry").hidden = !Q.wrong.length;
+  $("e-wrong").innerHTML = Q.wrong.map(a => listItem(a)).join("");
+  show("end");
+}
+$("e-retry").onclick = () => startQuiz(Q.wrong);
+$("e-new").onclick = () => { renderStart(); show("start"); };
+$("e-wrong").onclick = e => { const b = e.target.closest(".item"); if (b) openDetail(+b.dataset.nr, "end"); };
+
+/* ---------- Artenliste ---------- */
+let LG = "";
+function listItem(a) {
+  const th = a.bilder[0] ? `<img src="img/${a.bilder[0].f}.webp" alt="" loading="lazy">` : `<span class="noimg">ohne<br>Bild</span>`;
+  return `<button class="item" data-nr="${a.nr}" id="it-${a.nr}">${th}<span class="t"><b>${esc(a.de)}</b><span>${esc(a.lat)}</span></span>
+    ${a.bilder.length ? `<span class="badge">${esc(ST[a.st])}</span>` : `<span class="badge">nicht im Quiz</span>`}</button>`;
+}
+function renderList() {
+  $("l-sum").textContent = `${ARTEN.length} Arten aus dem Buch, davon ${MIT_BILD.length} im Quiz. ${ARTEN.length - MIT_BILD.length} Arten haben kein passendes gemeinfreies Bild und sind nur hier aufgeführt.`;
+  $("l-gr").innerHTML = [["", "Alle"], ...Object.entries(GR)].map(([k, v]) => `<button class="chip" id="lg-${k || "alle"}" data-k="${k}" aria-pressed="${LG === k}">${v}</button>`).join("");
+  const q = $("l-q").value.trim().toLowerCase();
+  const items = ARTEN.filter(a => (!LG || a.gr === LG) && (!q || (a.de + " " + a.lat + " " + GATT[a.g].de).toLowerCase().includes(q)));
+  $("l-items").innerHTML = items.length ? items.map(listItem).join("") : `<div class="empty">Keine Art gefunden.</div>`;
+}
+$("l-gr").onclick = e => { const b = e.target.closest(".chip"); if (b) { LG = b.dataset.k; renderList(); } };
+let lq; $("l-q").oninput = () => { clearTimeout(lq); lq = setTimeout(renderList, 150); };
+$("l-items").onclick = e => { const b = e.target.closest(".item"); if (b) openDetail(+b.dataset.nr, "list"); };
+let backTo = "list";
+function openDetail(nr, from) {
+  backTo = from; const a = ARTEN.find(x => x.nr === nr);
+  const gal = a.bilder.length ? `<div class="gallery">${a.bilder.map((b, i) => `<img src="img/${b.f}.webp" alt="${esc(a.de)}, Bild ${i + 1}" data-zoom="img/${b.f}.webp" loading="lazy">`).join("")}</div>`
+    : `<p class="mixup">Für diese Art gibt es kein passendes gemeinfreies Bild. Sie ist deshalb nicht im Quiz.</p>`;
+  const credits = a.bilder.map((b, i) => `Bild ${i + 1}: ${esc(b.by || "unbekannt")} · ${esc(b.lic)} · <a href="${esc(b.src)}" target="_blank" rel="noopener">Quelle</a>`).join("<br>");
+  $("d-card").innerHTML = gal + infoCard(a, null, null) + (credits ? `<p class="credit">${credits}</p>` : "");
+  $("d-back").textContent = from === "end" ? "Zurück zum Ergebnis" : "Zurück zur Liste";
+  show("detail");
+}
+$("d-back").onclick = () => show(backTo);
+$("d-card").onclick = e => { const i = e.target.closest("[data-zoom]"); if (i) zoom(i.dataset.zoom); };
+
+/* ---------- Vollbild ---------- */
+function zoom(src) { $("zoom-img").src = src; $("zoom").hidden = false; $("zoom-close").focus(); }
+function unzoom() { $("zoom").hidden = true; }
+$("plate").onclick = () => Q && Q.cur && zoom("img/" + Q.cur.img.f + ".webp");
+$("plate").onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("plate").click(); } };
+$("zoom").onclick = unzoom;
+document.addEventListener("keydown", e => {
+  if (!$("zoom").hidden && e.key === "Escape") return unzoom();
+  if ($("v-quiz").hidden || !Q || !Q.cur) return;
+  if (!$("nextrow").hidden && (e.key === "Enter" || e.key === " ") && document.activeElement === document.body) { e.preventDefault(); $("next").click(); }
+  const n = +e.key; if (n >= 1 && n <= 6) { const b = $("opt-" + (n - 1)); if (b && !b.disabled) b.click(); }
+});
+
+renderStart();
+})();
+</script>
+</body>
+</html>
