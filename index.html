@@ -87,6 +87,20 @@ h2{font-size:1.3rem}
 .opt.ok{background:var(--ok-bg);border-color:var(--ok)}
 .opt.bad{background:var(--bad-bg);border-color:var(--bad)}
 .opt.gone{opacity:.28;text-decoration:line-through}
+.opts.why{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.opt .why{display:block;margin-top:6px;font-size:.82rem;line-height:1.35;color:var(--ink);background:var(--hint-bg);border-radius:6px;padding:5px 8px;font-style:normal}
+.opt .why b{color:var(--hint);font-weight:700}
+.opt .why + .why{margin-top:4px}
+.qside{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+/* Breite Ansicht (PC) */
+@media (min-width:900px){
+  #v-quiz{max-width:1180px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:start}
+  #v-quiz .plate{position:sticky;top:72px;height:calc(100vh - 100px);min-height:420px;max-height:900px}
+  #v-quiz .plate img{max-height:calc(100vh - 100px)}
+  body.inquiz .top .in{max-width:1180px}
+  #v-detail{max-width:900px}
+}
 .hintbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .hintbtn{border:1px dashed var(--hint);color:var(--hint);background:transparent;border-radius:999px;padding:7px 14px;cursor:pointer;font-size:.9rem;font-weight:600}
 .hintbtn:disabled{opacity:.4;cursor:default}
@@ -135,7 +149,8 @@ h2{font-size:1.3rem}
 /* Vollbild */
 .zoom{position:fixed;inset:0;z-index:50;background:rgba(8,10,7,.95);display:grid;place-items:center;
   padding:max(12px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));cursor:zoom-out}
-.zoom img{max-width:100%;max-height:100%;object-fit:contain;background:#fff}
+.zoom{grid-template:minmax(0,1fr)/minmax(0,1fr)}
+.zoom img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;background:#fff}
 .zoom button{position:absolute;top:max(12px,env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));background:#fff;color:#111;border:0;border-radius:999px;padding:8px 14px;font-weight:700;cursor:pointer}
 footer{font-size:.78rem;color:var(--muted);text-align:center;max-width:60ch;margin:8px auto 0}
 footer a{color:inherit}
@@ -183,12 +198,14 @@ footer a{color:inherit}
 <!-- Quiz -->
 <main class="wrap" id="v-quiz" hidden>
   <div class="plate" id="plate" role="button" tabindex="0" aria-label="Bild vergrößern"><span class="loading">Lade Bild …</span></div>
+  <div class="qside">
   <div class="step"><h2 id="q-title"></h2><span class="pill" id="q-num"></span></div>
   <div class="opts" id="opts"></div>
-  <div class="hintbar"><button class="hintbtn" id="hintbtn">Hinweis</button><span class="pill" id="hintleft"></span></div>
+  <div class="hintbar"><button class="hintbtn" id="hintbtn">Woran erkennt man sie? (−¼)</button><span class="pill" id="hintleft"></span></div>
   <div class="hints" id="hints"></div>
   <section class="card info" id="info" hidden aria-live="polite"></section>
   <div class="row" id="nextrow" hidden><button class="btn" id="next">Weiter</button></div>
+  </div>
 </main>
 
 <!-- Ergebnis -->
@@ -235,7 +252,6 @@ const store = {
 };
 
 const ST = { H: "Heimisch", E: "Eingebürgert", P: "Häufig gepflanzt", Z: "Selten gepflanzt", M: "Mittelmeer / Kübel" };
-const ST_LONG = { H: "Heimisch, wächst wild", E: "Nicht heimisch, aber verwildert und eingebürgert", P: "Nicht heimisch, häufig gepflanzt", Z: "Nicht heimisch, nur vereinzelt in Parks und Gärten", M: "Bei uns kaum im Freien, Mittelmeer oder Kübelpflanze" };
 const GR = { N: "Nadelbäume", L: "Laubbäume", S: "Sträucher", K: "Kletterpflanzen" };
 const HF = ["", "sehr selten", "selten", "gelegentlich", "häufig", "sehr häufig"];
 const NS = [10, 20, 50, 0];
@@ -333,6 +349,7 @@ function nextQ() {
   askGenus();
 }
 function renderOpts(opts, onPick) {
+  $("opts").classList.remove("why");
   $("opts").innerHTML = opts.map((o, i) => `<button class="opt" id="opt-${i}" data-i="${i}"><span>${esc(o.main)}</span><span class="sub">${esc(o.sub)}</span></button>`).join("");
   $("opts").onclick = e => { const b = e.target.closest(".opt"); if (b && !b.disabled) onPick(opts[+b.dataset.i], b, opts); };
   Q.cur.opts = opts; Q.cur.hints = 0; $("hints").innerHTML = ""; updHintBtn();
@@ -405,32 +422,52 @@ function updScore() {
 const fmt = x => (Math.round(x * 100) / 100).toLocaleString("de-DE");
 
 /* ---------- Hinweise ---------- */
-function hintsFor() {
-  const a = Q.cur.a, g = GATT[a.g];
-  if (Q.cur.step === 1) return [
-    { t: "Wuchs", v: `${a.wuchs}${a.h ? ", " + a.h + " hoch" : ""}.` },
-    { t: "Typisch für die Gattung", v: g.tipps.length ? g.tipps[0] : a.tipps[0] },
-    { t: "Auswahl eingegrenzt", cut: true }
-  ];
-  return [
-    { t: "Standort", v: a.ort },
-    { t: "Vorkommen", v: `${ST_LONG[a.st]}, ${HF[a.hf]} zu sehen.` },
-    { t: "Erkennungsmerkmal", v: a.tipps[0] }
-  ];
+// Merkmale, die man auf einer Bildtafel sieht (Blatt, Frucht …), kommen vor Borke, Wuchs, Duft
+const SICHTBAR = /bl[aä]tt|nadel|fr[uü]ch|zapfen|bl[uü]t|knospe|schuppe|fieder|beere|n[uü]ss|samen|k[aä]tzchen|dolde|rispe|traube|kerze|h[uü]lse|kapsel|dorn|stachel|staubf|kelch|ranke|zweig|lappig|gesägt|rand/i;
+const UNSICHTBAR = /borke|rinde|stamm|wuchs|w[aä]chst|krone|duft|sorte|flagge|standort|boden/i;
+function traits(tipps) {
+  const score = t => (SICHTBAR.test(t) ? 2 : 0) - (UNSICHTBAR.test(t) ? 1 : 0);
+  return tipps.map((t, i) => [t, score(t), i]).sort((x, y) => y[1] - x[1] || x[2] - y[2]).map(x => x[0]);
 }
+function genusTipps(gid) {
+  const g = GATT[gid]; if (g.tipps && g.tipps.length) return g.tipps;
+  const arten = (BY_G[gid] || ARTEN.filter(x => x.g === gid)).slice().sort((x, y) => y.hf - x.hf);
+  return arten.length ? arten[0].tipps : [];
+}
+// Hinweis 1: Blattbeschreibung (Blätter sind auf fast jedem Bild zu sehen).
+// Hinweis 2: bevorzugt ein anderes sichtbares Merkmal (Frucht, Blüte, Zapfen …).
+const BLATTWORT = /bl[aä]tt|nadel|fieder|schuppenbl|gefingert|lappig|gelappt/i;
+function optHint(o, lvl) {
+  const art = Q.cur.step === 1 ? null : ARTEN.find(x => x.nr === o.id);
+  const blatt = art ? art.blatt : GATT[o.id].blatt;
+  if (lvl === 0) return blatt;
+  const tipps = art ? art.tipps : genusTipps(o.id);
+  const rest = traits(tipps).filter(t => t !== blatt);
+  return rest.find(t => !BLATTWORT.test(t) && SICHTBAR.test(t)) || rest[0] || "";
+}
+const HINT_LABELS = ["Wie sehen die Blätter aus? (−¼)", "Weiteres Merkmal (−¼)", "Auswahl eingrenzen (−¼)"];
 function updHintBtn() {
-  const left = 3 - Q.cur.hints;
+  const used = Q.cur.hints, left = 3 - used;
   $("hintbtn").disabled = left <= 0;
-  $("hintleft").textContent = left < 3 ? `noch ${left} · jeder Hinweis kostet ¼ Punkt` : "";
+  $("hintbtn").textContent = HINT_LABELS[Math.min(used, 2)];
+  $("hintleft").textContent = used ? `noch ${left}` : "";
 }
 $("hintbtn").onclick = () => {
-  const h = hintsFor()[Q.cur.hints]; if (!h) return;
+  const lvl = Q.cur.hints; if (lvl >= 3) return;
   Q.cur.hints++;
-  if (h.cut) {
-    const btns = [...$("opts").children].filter((b, i) => !b.disabled && Q.cur.opts[i].id !== (Q.cur.step === 1 ? Q.cur.a.g : Q.cur.a.nr));
-    shuffle(btns).slice(0, Math.max(1, Math.ceil(btns.length / 2))).forEach(b => { b.disabled = true; b.classList.add("gone"); });
-    $("hints").insertAdjacentHTML("beforeend", `<div class="hint"><b>${h.t}:</b> Falsche Antworten ausgeblendet.</div>`);
-  } else $("hints").insertAdjacentHTML("beforeend", `<div class="hint"><b>${esc(h.t)}:</b> ${esc(h.v)}</div>`);
+  const btns = [...$("opts").children];
+  if (lvl < 2) {
+    $("opts").classList.add("why");
+    btns.forEach((b, i) => {
+      const t = optHint(Q.cur.opts[i], lvl);
+      if (t) b.insertAdjacentHTML("beforeend", `<span class="why"><b>${lvl === 0 ? "Blatt" : "Außerdem"}:</b> ${esc(t)}</span>`);
+    });
+  } else {
+    const rightId = Q.cur.step === 1 ? Q.cur.a.g : Q.cur.a.nr;
+    const wrong = btns.filter((b, i) => !b.disabled && Q.cur.opts[i].id !== rightId);
+    shuffle(wrong).slice(0, Math.max(1, Math.ceil(wrong.length / 2))).forEach(b => { b.disabled = true; b.classList.add("gone"); });
+    $("hints").insertAdjacentHTML("beforeend", `<div class="hint"><b>Auswahl eingegrenzt:</b> Einige falsche Antworten sind ausgeblendet.</div>`);
+  }
   updHintBtn();
 };
 
@@ -439,8 +476,8 @@ function dots(n) { return `<span class="dots" aria-label="${HF[n]}">${"●".repe
 function infoCard(a, img, cur) {
   const g = GATT[a.g], sibs = ARTEN.filter(x => x.g === a.g && x !== a);
   let mix = "";
-  if (cur && cur.mix) mix = `<div class="mixup"><b>Verwechselt mit ${esc(cur.mix.de)}:</b> ${esc(cur.mix.tipps[0])}</div>`;
-  else if (cur && cur.mixG) mix = `<div class="mixup">Du hast <b>${esc(cur.mixG.de)}</b> gewählt. Woran man ${esc(g.de)} erkennt: ${esc(g.tipps[0] || a.tipps[0])}</div>`;
+  if (cur && cur.mix) mix = `<div class="mixup"><b>Verwechselt mit ${esc(cur.mix.de)}:</b> Blatt dort: ${esc(cur.mix.blatt)}</div>`;
+  else if (cur && cur.mixG) mix = `<div class="mixup">Du hast <b>${esc(cur.mixG.de)}</b> gewählt (Blatt: ${esc(cur.mixG.blatt)}). Bei ${esc(g.de)}: ${esc(g.blatt)}</div>`;
   const credit = img ? `<p class="credit">Bild: ${esc(img.by || "unbekannt")} · ${esc(img.lic)} · <a href="${esc(img.src)}" target="_blank" rel="noopener">Quelle auf Wikimedia Commons</a></p>` : "";
   return `
     <div class="names"><span class="label">${esc(GR[a.gr])} · Gattung ${esc(g.de)}</span><h2>${esc(a.de)}</h2><span class="lat">${esc(a.lat)} · ${esc(a.fam)}</span></div>
@@ -448,6 +485,7 @@ function infoCard(a, img, cur) {
     <dl class="facts">
       <div><dt>Höhe</dt><dd>${esc(a.h || "–")}</dd></div>
       <div><dt>Blütezeit</dt><dd>${esc(a.bl || "–")}</dd></div>
+      <div class="wide"><dt>Blatt</dt><dd>${esc(a.blatt)}</dd></div>
       <div class="wide"><dt>Wuchs</dt><dd>${esc(a.wuchs)}</dd></div>
       <div class="wide"><dt>Standort</dt><dd>${esc(a.ort)}</dd></div>
       <div class="wide"><dt>In Deutschland</dt><dd><span class="status ${a.st}">${esc(ST[a.st])}</span> ${dots(a.hf)} <span class="pill">${HF[a.hf]}</span></dd></div>
