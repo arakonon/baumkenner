@@ -589,6 +589,7 @@ function infoCard(a, img, cur) {
       <div><dt>Höhe</dt><dd>${esc(a.h || "–")}</dd></div>
       <div><dt>Blütezeit</dt><dd>${esc(a.bl || "–")}</dd></div>
       <div class="wide"><dt>Blatt</dt><dd>${esc(a.blatt)}</dd></div>
+      ${a.bs ? `<div class="wide"><dt>Blattstellung</dt><dd>${esc(a.bs)}</dd></div>` : ""}
       <div class="wide"><dt>Wuchs</dt><dd>${esc(a.wuchs)}</dd></div>
       <div class="wide"><dt>Standort</dt><dd>${esc(a.ort)}</dd></div>
       <div class="wide"><dt>In Deutschland</dt><dd><span class="status ${a.st}">${esc(ST[a.st])}</span> ${dots(a.hf)} <span class="pill">${HF[a.hf]}</span></dd></div>
